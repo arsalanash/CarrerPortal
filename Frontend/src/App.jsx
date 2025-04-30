@@ -16,24 +16,24 @@ function App() {
       <Route path="/student/login" element={<StudentLoginPage />} />
       <Route path="/student/register" element={<StudentRegisterPage />} />
       <Route path="/create-root-admin" element={<AdminRegisterPage />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      <Route path="/student" element={<StudentDashboard />} />
-      {/* <Route
+      {/* <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      <Route path="/student" element={<StudentDashboard />} /> */}
+      <Route
         path="/admin-dashboard"
         element={
           <ProtectedRoute allowedUserType="admin">
             <AdminDashboard />
           </ProtectedRoute>
         }
-      /> */}
-      {/* <Route
+      />
+      <Route
         path="/student"
         element={
           <ProtectedRoute allowedUserType="student">
             <StudentDashboard />
           </ProtectedRoute>
         }
-      /> */}
+      />
     </Routes>
   );
 }

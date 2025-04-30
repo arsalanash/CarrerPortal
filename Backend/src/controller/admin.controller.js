@@ -84,17 +84,40 @@ const loginAdmin = asyncHandler(async (req, res) => {
 });
 
 const logoutAdmin = asyncHandler(async (req, res) => {
-    await Admin.findByIdAndUpdate(req.admin._id, { $unset: { refreshToken: 1 } }, { new: true });
-    const options = {
-        httpOnly: true,
-        secure: true
-    };
+    const { refreshToken } = req.body;
 
-    return res
-        .status(200)
-        .clearCookie("accessToken", options)
-        .clearCookie("refreshToken", options)
-        .json(new ApiResponse(200, {}, "Admin logged out"));
+    if (!refreshToken) {
+        throw new ApiError(400, "Refresh token is required");
+    }
+
+    try {
+        // Verify and decode the refresh token
+        const decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+        // Extract the admin ID (_id) from the decoded token
+        const adminId = decodedToken._id;
+
+        if (!adminId) {
+            throw new ApiError(401, "Invalid refresh token");
+        }
+
+        // Unset the refreshToken in the database
+        await Admin.findByIdAndUpdate(adminId, { $unset: { refreshToken: 1 } }, { new: true });
+
+        const options = {
+            httpOnly: true,
+            secure: true,
+        };
+
+        // Clear cookies and send a success response
+        return res
+            .status(200)
+            .clearCookie("accessToken", options)
+            .clearCookie("refreshToken", options)
+            .json(new ApiResponse(200, {}, "Admin logged out"));
+    } catch (error) {
+        throw new ApiError(401, error.message || "Invalid refresh token");
+    }
 });
 
 const refreshAdminAccessToken = asyncHandler(async (req, res) => {

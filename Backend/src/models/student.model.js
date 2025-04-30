@@ -1,6 +1,7 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+
 const { Schema } = mongoose;
 
 const studentSchema = new Schema(
@@ -21,7 +22,6 @@ const studentSchema = new Schema(
             index: true,
             validate: {
                 validator: function (v) {
-                    // Adjust \d{4} if exactly 4 digits are required
                     return /^(ece|cse)\d{5}@iiitkalyani\.ac\.in$/.test(v);
                 },
                 message: props => `${props.value} is not a valid email format!`
@@ -75,7 +75,7 @@ studentSchema.methods.generateAccessToken = function () {
             _id: this._id,
             email: this.email,
             fullName: this.fullName,
-            role : "student"
+            role: "student"
         },
         process.env.ACCESS_TOKEN_SECRET,
         {
@@ -89,7 +89,7 @@ studentSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         {
             _id: this._id,
-            role : "student"
+            role: "student"
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
@@ -98,4 +98,4 @@ studentSchema.methods.generateRefreshToken = function () {
     );
 };
 
-module.exports = mongoose.model('Student', studentSchema);
+export default mongoose.model('Student', studentSchema);

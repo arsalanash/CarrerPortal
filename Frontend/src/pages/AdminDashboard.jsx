@@ -1,11 +1,8 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Doughnut } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import axios from "axios";
-
-ChartJS.register(ArcElement, Tooltip, Legend);
-
 import {
     FaBars,
     FaTimes,
@@ -15,6 +12,8 @@ import {
     FaSignOutAlt,
 } from "react-icons/fa";
 
+ChartJS.register(ArcElement, Tooltip, Legend);
+
 const AdminDashboard = () => {
     const [onCampusOpportunities, setOnCampusOpportunities] = useState([]);
     const [offCampusOpportunities, setOffCampusOpportunities] = useState([]);
@@ -22,31 +21,68 @@ const AdminDashboard = () => {
     const [totalStudentsCount, setTotalStudentsCount] = useState(0);
     const [registeredStudentsCount, setRegisteredStudentsCount] = useState(0);
     const [placedStudentsCount, setPlacedStudentsCount] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     const navigate = useNavigate();
-
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
 
-    const handleLogout = () => {
-        navigate("/logout");
+    const handleLogout = async () => {
+        try {
+            // Retrieve the refreshToken from localStorage
+            const refreshToken = localStorage.getItem("refreshToken");
+    
+            if (!refreshToken) {
+                alert("No refresh token found. Please log in again.");
+                //navigate("/admin/login");
+                return;
+            }
+    
+            // Make an API call to log out the admin
+            const response = await axios.post(
+                "http://localhost:8000/api/admin/logout",
+                { refreshToken }, 
+            );
+    
+            console.log("Logout response:", response.data);
+    
+            // Clear authentication tokens or user data from localStorage/sessionStorage
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+    
+            // Navigate to the login page
+            navigate("/admin/login");
+    
+            // Show a success message
+            alert("You have been logged out successfully.");
+        } catch (error) {
+            console.error("Error during logout:", error.response || error.message);
+            alert("Failed to log out. Please try again.");
+        }
     };
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [onCampus, offCampus, companies, students, registered, placed] =
-                    await Promise.all([
-                        axios.get("http://localhost:5001/api/adminPost/oncampusOpportunity/5"),
-                        axios.get("http://localhost:5001/api/adminPost/offcampusOpportunity/5"),
-                        axios.get("http://localhost:5001/api/adminPost/companiesList"),
-                        axios.get("http://localhost:5001/api/adminPost/studentsListForAdmin"),
-                        axios.get("http://localhost:5001/api/adminPost/registeredStudentsCount"),
-                        axios.get("http://localhost:5001/api/adminPost/placedStudentsCount"),
-                    ]);
+                const [
+                    onCampus,
+                    offCampus,
+                    companies,
+                    students,
+                    registered,
+                    placed,
+                ] = await Promise.all([
+                    axios.get("http://localhost:5001/api/adminPost/oncampusOpportunity/5"),
+                    axios.get("http://localhost:5001/api/adminPost/offcampusOpportunity/5"),
+                    axios.get("http://localhost:5001/api/adminPost/companiesList"),
+                    axios.get("http://localhost:5001/api/adminPost/studentsListForAdmin"),
+                    axios.get("http://localhost:5001/api/adminPost/registeredStudentsCount"),
+                    axios.get("http://localhost:5001/api/adminPost/placedStudentsCount"),
+                ]);
 
                 setOnCampusOpportunities(onCampus.data);
                 setOffCampusOpportunities(offCampus.data);
@@ -56,6 +92,9 @@ const AdminDashboard = () => {
                 setPlacedStudentsCount(placed.data.length);
             } catch (error) {
                 console.error("Error fetching data:", error);
+                //setError("Failed to load data. Please try again later.");
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -76,8 +115,24 @@ const AdminDashboard = () => {
         ],
     });
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="loader"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p className="text-red-500 text-lg">{error}</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex h-screen bg-gray-50 position-relative">
+        <div className="flex h-screen bg-gray-50">
             {/* Sidebar Toggle for Mobile */}
             <div className="md:hidden fixed top-4 right-4 z-50">
                 <button
@@ -97,14 +152,14 @@ const AdminDashboard = () => {
 
             {/* Mobile Sidebar */}
             <div
-                className={`md:hidden fixed top-0 right-0 bottom-0 w-4/5 h-1/2 rounded-md bg-white shadow-md transition-all duration-300 z-50 transform ${isSidebarOpen ? "translate-x-0" : "translate-x-full "
+                className={`md:hidden fixed top-0 right-0 bottom-0 w-4/5 bg-white shadow-md transition-transform duration-300 z-50 ${isSidebarOpen ? "translate-x-0" : "translate-x-full"
                     }`}
             >
-                <div className="flex flex-col h-full"> 
-                    <h2 className="admin-name text-center py-6 text-xl font-bold border-b">
+                <div className="flex flex-col h-full">
+                    <h2 className="text-center py-6 text-xl font-bold border-b">
                         Welcome Admin
                     </h2>
-                    <div className="sidebar-menu flex flex-col py-4">
+                    <div className="flex flex-col py-4">
                         <button
                             className="flex items-center px-6 py-4 text-lg text-gray-700 hover:bg-blue-100 border-2 my-1 rounded-lg"
                             onClick={() => navigate("/studentsListForAdmin")}
@@ -139,8 +194,8 @@ const AdminDashboard = () => {
 
             {/* Desktop Sidebar */}
             <div className="hidden md:flex w-[256px] bg-white fixed top-0 bottom-0 flex-col px-6 py-8 shadow-md border-r">
-                <h2 className="admin-name text-2xl font-bold mb-8">Welcome Admin</h2>
-                <div className="sidebar-menu flex flex-col space-y-6">
+                <h2 className="text-2xl font-bold mb-8">Welcome Admin</h2>
+                <div className="flex flex-col space-y-6">
                     <button
                         className="flex items-center px-4 py-3 rounded-lg text-lg hover:bg-blue-100 transition"
                         onClick={() => navigate("/studentsListForAdmin")}
@@ -173,7 +228,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Main Content */}
-            <div className="ml-0 md:ml-[256px]  flex-1 p-10 overflow-y-auto space-y-12">
+            <div className="ml-0 md:ml-[256px] flex-1 p-10 overflow-y-auto space-y-12">
                 {/* Post Opportunity Section */}
                 <div
                     className="flex flex-col items-center bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition"
@@ -184,26 +239,27 @@ const AdminDashboard = () => {
                         alt="Post"
                         className="w-40 h-40 object-contain rounded-full shadow-md mb-6"
                     />
-
                     <button className="text-indigo-800 font-bold text-lg">
                         Post New Opportunity
                     </button>
                 </div>
 
                 {/* Charts Section */}
-                <div className="flex flex-col items-center  md:flex-row md:justify-evenly">
-                    {[{ label: "Companies", value: totalCompaniesCount, color: "#DDDDDD" }, {
-                        label: "Students",
-                        value: registeredStudentsCount,
-                        total: totalStudentsCount,
-                        color: "#DDDDDD",
-                    },
-                    {
-                        label: "Placed",
-                        value: placedStudentsCount,
-                        total: totalStudentsCount,
-                        color: "#FFCE56",
-                    },
+                <div className="flex flex-col items-center md:flex-row md:justify-evenly">
+                    {[
+                        { label: "Companies", value: totalCompaniesCount, color: "#DDDDDD" },
+                        {
+                            label: "Students",
+                            value: registeredStudentsCount,
+                            total: totalStudentsCount,
+                            color: "#DDDDDD",
+                        },
+                        {
+                            label: "Placed",
+                            value: placedStudentsCount,
+                            total: totalStudentsCount,
+                            color: "#FFCE56",
+                        },
                     ].map(({ label, value, total, color }, index) => (
                         <div key={index} className="relative w-48 mt-4 md:mt-0">
                             <Doughnut
@@ -222,7 +278,10 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Opportunities Section */}
-                {[{ title: "On-Campus Opportunities", data: onCampusOpportunities }, { title: "Off-Campus Opportunities", data: offCampusOpportunities },].map(({ title, data }, index) => (
+                {[
+                    { title: "On-Campus Opportunities", data: onCampusOpportunities },
+                    { title: "Off-Campus Opportunities", data: offCampusOpportunities },
+                ].map(({ title, data }, index) => (
                     <div key={index}>
                         <h4 className="text-lg font-semibold mb-4">{title}</h4>
                         <div className="flex gap-4 overflow-x-auto">
@@ -248,7 +307,9 @@ const AdminDashboard = () => {
                         </div>
                         <button
                             onClick={() =>
-                                navigate(`/allOpportunities/${title.toLowerCase().replace(/\s+/g, "")}`)
+                                navigate(
+                                    `/allOpportunities/${title.toLowerCase().replace(/\s+/g, "")}`
+                                )
                             }
                             className="text-indigo-600 font-semibold mt-2"
                         >

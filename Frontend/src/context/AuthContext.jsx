@@ -23,8 +23,10 @@ const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (token, userType) => {
-    localStorage.setItem('authToken', token);
+    localStorage.setItem('authToken', token.token);
+    console.log('Token:', token.token);
     localStorage.setItem('userType', userType);
+    console.log('User Type:', userType);
     setAuth({ isAuthenticated: true, userType, token });
     navigate('/');
   };

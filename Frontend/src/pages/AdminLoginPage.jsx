@@ -15,7 +15,7 @@ const AdminLoginPage = () => {
 
   const checkRootAdmin = async () => {
     try {
-      const response = await axios.get('http://localhost:5001/api/admin/check-root-admin');
+      const response = await axios.get('http://localhost:8000/api/admin/check-root-admin');
       setRootAdminExists(response.data.exists);
     } catch (error) {
       console.error('Error checking root admin:', error);

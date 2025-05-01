@@ -34,6 +34,7 @@ const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userType');
+    console.log('Logged out');
     setAuth({ isAuthenticated: false, userType: null, token: null });
     navigate('/');
   };

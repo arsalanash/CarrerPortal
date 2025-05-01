@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from 'react';
 import { Doughnut } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import axios from "axios";
+import { AuthContext } from '../context/AuthContext';
 import {
     FaBars,
     FaTimes,
@@ -11,6 +12,7 @@ import {
     FaRegListAlt,
     FaSignOutAlt,
 } from "react-icons/fa";
+
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -23,7 +25,7 @@ const AdminDashboard = () => {
     const [placedStudentsCount, setPlacedStudentsCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-
+    const { logout } = useContext(AuthContext);
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -35,28 +37,28 @@ const AdminDashboard = () => {
         try {
             // Retrieve the refreshToken from localStorage
             const refreshToken = localStorage.getItem("refreshToken");
-    
+
             if (!refreshToken) {
                 alert("No refresh token found. Please log in again.");
                 //navigate("/admin/login");
                 return;
             }
-    
+
             // Make an API call to log out the admin
             const response = await axios.post(
                 "http://localhost:8000/api/admin/logout",
-                { refreshToken }, 
+                { refreshToken },
             );
-    
+            logout();
             console.log("Logout response:", response.data);
-    
+
             // Clear authentication tokens or user data from localStorage/sessionStorage
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
-    
+
             // Navigate to the login page
             navigate("/admin/login");
-    
+
             // Show a success message
             alert("You have been logged out successfully.");
         } catch (error) {
@@ -76,12 +78,12 @@ const AdminDashboard = () => {
                     registered,
                     placed,
                 ] = await Promise.all([
-                    axios.get("http://localhost:5001/api/adminPost/oncampusOpportunity/5"),
-                    axios.get("http://localhost:5001/api/adminPost/offcampusOpportunity/5"),
-                    axios.get("http://localhost:5001/api/adminPost/companiesList"),
-                    axios.get("http://localhost:5001/api/adminPost/studentsListForAdmin"),
-                    axios.get("http://localhost:5001/api/adminPost/registeredStudentsCount"),
-                    axios.get("http://localhost:5001/api/adminPost/placedStudentsCount"),
+                    axios.get("http://localhost:8000/api/adminPost/oncampusOpportunity/5"),
+                    axios.get("http://localhost:8000/api/adminPost/offcampusOpportunity/5"),
+                    axios.get("http://localhost:8000/api/adminPost/companiesList"),
+                    axios.get("http://localhost:8000/api/adminPost/studentsListForAdmin"),
+                    axios.get("http://localhost:8000/api/adminPost/registeredStudentsCount"),
+                    axios.get("http://localhost:8000/api/adminPost/placedStudentsCount"),
                 ]);
 
                 setOnCampusOpportunities(onCampus.data);
@@ -232,14 +234,13 @@ const AdminDashboard = () => {
                 {/* Post Opportunity Section */}
                 <div
                     className="flex flex-col items-center bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition"
-                    onClick={() => navigate("/AddCompanyProfile")}
                 >
                     <img
                         src="/img.png"
                         alt="Post"
                         className="w-40 h-40 object-contain rounded-full shadow-md mb-6"
                     />
-                    <button className="text-indigo-800 font-bold text-lg">
+                    <button className="text-indigo-800 font-bold text-lg" onClick={() => navigate("/AddCompanyProfile")}>
                         Post New Opportunity
                     </button>
                 </div>

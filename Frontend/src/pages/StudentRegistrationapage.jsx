@@ -3,45 +3,72 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
 const StudentRegisterPage = () => {
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [gpa, setGpa] = useState('');
+  const [department, setDepartment] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   const validateForm = () => {
     const newErrors = {};
-    if (!email) newErrors.email = 'Email is required.';
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email format.';
-    if (!password) newErrors.password = 'Password is required.';
-    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters.';
+    if (!fullName.trim()) {
+      newErrors.fullName = 'Full name is required.';
+    }
+    if (!email) {
+      newErrors.email = 'Email is required.';
+    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+      newErrors.email = 'Invalid email format.';
+    }
+    if (!password) {
+      newErrors.password = 'Password is required.';
+    } else if (password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters.';
+    } else if (!/[A-Z]/.test(password)) {
+      newErrors.password = 'Password must contain at least one uppercase letter.';
+    } else if (!/[0-9]/.test(password)) {
+      newErrors.password = 'Password must contain at least one number.';
+    }
+    if (!gpa) {
+      newErrors.gpa = 'GPA is required.';
+    } else if (isNaN(gpa) || gpa < 0 || gpa > 10) {
+      newErrors.gpa = 'GPA must be a number between 0 and 10.';
+    }
+    if (!department.trim()) {
+      newErrors.department = 'Department is required.';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setLoading(true);
-    axios
-      .post('http://localhost:8000/api/student/register', {
+    try {
+      await axios.post('http://localhost:8000/api/student/register', {
+        fullName,
         email,
         password,
-      })
-      .then(() => {
-        alert('Request sent to admin for approval. You will be notified once approved.');
-        setTimeout(() => {
-          navigate('/student/login');
-        }, 2000);
-      })
-      .catch((error) => {
-        console.error('Error registering student:', error);
-        alert(error?.response?.data || 'Registration failed. Please try again.');
-      })
-      .finally(() => {
-        setLoading(false);
+        gpa,
+        department,
       });
+
+      alert('Request sent to admin for approval. You will be notified once approved.');
+      setTimeout(() => {
+        navigate('/student/login');
+      }, 2000);
+    } catch (error) {
+      console.error('Error registering student:', error);
+      const errorMessage =
+        error?.response?.data?.message || 'Registration failed. Please try again.';
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,6 +78,29 @@ const StudentRegisterPage = () => {
           Student Registration
         </h2>
         <form onSubmit={handleRegister} className="space-y-6">
+          {/* Full Name Field */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2" htmlFor="fullName">
+              Full Name
+            </label>
+            <input
+              id="fullName"
+              type="text"
+              className={`w-full px-4 py-3 rounded-lg border ${
+                errors.fullName ? 'border-red-500' : 'border-gray-300'
+              } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
+              placeholder="Enter your full name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
+            {errors.fullName && (
+              <p className="text-red-500 text-sm mt-1" aria-live="polite">
+                {errors.fullName}
+              </p>
+            )}
+          </div>
+
           {/* Email Field */}
           <div>
             <label className="block text-gray-700 font-medium mb-2" htmlFor="email">
@@ -59,8 +109,9 @@ const StudentRegisterPage = () => {
             <input
               id="email"
               type="email"
-              className={`w-full px-4 py-3 rounded-lg border ${errors.email ? 'border-red-500' : 'border-gray-300'
-                } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
+              className={`w-full px-4 py-3 rounded-lg border ${
+                errors.email ? 'border-red-500' : 'border-gray-300'
+              } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -81,8 +132,9 @@ const StudentRegisterPage = () => {
             <input
               id="password"
               type="password"
-              className={`w-full px-4 py-3 rounded-lg border ${errors.password ? 'border-red-500' : 'border-gray-300'
-                } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
+              className={`w-full px-4 py-3 rounded-lg border ${
+                errors.password ? 'border-red-500' : 'border-gray-300'
+              } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -91,6 +143,53 @@ const StudentRegisterPage = () => {
             {errors.password && (
               <p className="text-red-500 text-sm mt-1" aria-live="polite">
                 {errors.password}
+              </p>
+            )}
+          </div>
+
+          {/* GPA Field */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2" htmlFor="gpa">
+              GPA
+            </label>
+            <input
+              id="gpa"
+              type="number"
+              step="0.01"
+              className={`w-full px-4 py-3 rounded-lg border ${
+                errors.gpa ? 'border-red-500' : 'border-gray-300'
+              } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
+              placeholder="Enter your GPA (0-10)"
+              value={gpa}
+              onChange={(e) => setGpa(e.target.value)}
+              required
+            />
+            {errors.gpa && (
+              <p className="text-red-500 text-sm mt-1" aria-live="polite">
+                {errors.gpa}
+              </p>
+            )}
+          </div>
+
+          {/* Department Field */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2" htmlFor="department">
+              Department
+            </label>
+            <input
+              id="department"
+              type="text"
+              className={`w-full px-4 py-3 rounded-lg border ${
+                errors.department ? 'border-red-500' : 'border-gray-300'
+              } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
+              placeholder="Enter your department"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              required
+            />
+            {errors.department && (
+              <p className="text-red-500 text-sm mt-1" aria-live="polite">
+                {errors.department}
               </p>
             )}
           </div>
@@ -106,10 +205,10 @@ const StudentRegisterPage = () => {
         </form>
 
         <div className="text-center mt-6">
-          Already have an account ? {"  "}
+          Already have an account?{' '}
           <Link to="/student/login" className="text-blue-500 hover:underline">
             Login
-          </Link> 
+          </Link>
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@ const ProtectedRoute = ({ allowedUserType, children }) => {
   console.log('Auth State:', auth);
   console.log('Allowed User Type:', allowedUserType);
 
-  if (!auth.isAuthenticated || auth.userType !== allowedUserType) {
+  if (!auth.isAuthenticated && auth.userType !== allowedUserType) {
     return <Navigate to="/" replace />;
   }
 
